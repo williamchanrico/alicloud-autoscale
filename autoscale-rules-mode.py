@@ -55,7 +55,6 @@ _scaling_groups = {}
 
 def init(args):
     """ Initialization """
-
     # Initialize necessary variables
     global _mode, _verbose, _client, _skip_sync, _limit
     _mode = args.mode
@@ -327,6 +326,13 @@ def modify_scaling_rule(scaling_rule_name):
 
         # Send the modify request
         _client.do_action_with_exception(req)
+
+        # Apply changes into _current_rules too so we can cache it
+        _current_rules[scaling_rule_name]['AdjustmentType'] = new_rule['AdjustmentType']
+        _current_rules[scaling_rule_name]['AdjustmentValue'] = new_rule['AdjustmentValue']
+        _current_rules[scaling_rule_name]['Cooldown'] = new_rule['Cooldown']
+        
+        print "CHANGED '{}': Successfully modified the scaling rule".format(scaling_rule_name)
     except KeyError:
         global _skip_sync
         if _skip_sync is True:
@@ -339,13 +345,6 @@ def modify_scaling_rule(scaling_rule_name):
         print ""
     except:
         print "ERROR '{}': {}".format(scaling_rule_name, sys.exc_info())
-    
-    print "CHANGED '{}': Successfully modified the scaling rule".format(scaling_rule_name)
-
-    # Apply changes into _current_rules too so we can cache it
-    _current_rules[scaling_rule_name]['AdjustmentType'] = new_rule['AdjustmentType']
-    _current_rules[scaling_rule_name]['AdjustmentValue'] = new_rule['AdjustmentValue']
-    _current_rules[scaling_rule_name]['Cooldown'] = new_rule['Cooldown']
 
 def dump_current_rules(rules, cache_path):
     """ Save _current_rules into cache file """
