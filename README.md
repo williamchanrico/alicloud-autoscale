@@ -1,6 +1,12 @@
 # Autoscale Rules Mode
 Script to automate the setting of autoscale rules in aliyun, based on config file
 
+Few things to note:
+- The script will skip rules that hasn't been changed
+- The script assumes that all rules follow our naming convention, `app-name-upscale` and `app-name-downscale`
+- Unlisted rule in the selected `yaml` file will use the `default-autoscale`/`default-downscale` instead
+- Rules that are listed in `yaml` file but are not found in aliyun, can be added automatically depending on user's choice
+
 ## Usage
 ```
 $ python2 autoscale-rules-mode.py -h
@@ -30,12 +36,6 @@ Using python `2.7.15`
 - `aliyun-python-sdk-ess`
 
 ## Example
-
-- The script will skip rules that hasn't been changed
-- The script assumes all rules follow our naming convention, `app-name-upscale` and `app-name-downscale`
-- Unlisted rule in selected `yaml` file will use the `default-autoscale`/`default-downscale` instead
-- Rules that are listed in `yaml` file but are not found in aliyun, can be added automatically depending on user's choice
-
 ```
 $ python2 autoscale-rules-mode.py --mode normal your_access_key your_secret_key region
 Initializing API client object using the configured access key
