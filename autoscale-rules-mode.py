@@ -80,7 +80,7 @@ def init(args):
 
     # Load current scaling groups that exist in aliyun
     print "Loading scaling groups information from aliyun"
-    _scaling_groups = retrieve_scaling_groups()
+    # _scaling_groups = retrieve_scaling_groups()
 
     # Load selected mode config file
     print "Loading selected mode config from config/" + _mode + ".yaml"
@@ -88,8 +88,19 @@ def init(args):
     try:
         with open(os.path.join(__location__, 'config/' + _mode + '.yaml')) as file:
             _config = yaml.safe_load(file)
-    except:
+        
+        # Check config for possible typo
+        # Current check:
+        #   1. Downscale rule must have negative value (this is how aliyun differentiate 'increase by' with 'decrease by')
+        
+        # Check #1
+        for a in _config:
+            if is_upscale_rule(a) == 0 and _config[a]['AdjustmentValue'] >= 0:
+                print "ERROR {}: Downscale rule must have a negative 'AdjustmentValue', stopping script".format(a)
+                sys.exit(1)
+    except IOError:
         print _mode, "Config file not found"
+        print sys.exc_info()
         sys.exit(1)
 
     # Load current rules that are being used in aliyun
@@ -173,6 +184,7 @@ def reconstruct_current_rules_cache():
     return rules
 
 def is_upscale_rule(rule_name):
+    """ Returns 1 for upscale rule, 0 for downscale rule, -1 for unrecognized rule """
     if rule_name.find("-upscale") != -1:
         return 1
     elif rule_name.find("-downscale") != -1:
