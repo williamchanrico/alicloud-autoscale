@@ -56,9 +56,8 @@ _scaling_groups = {}
 def init(args):
     """ Initialization """
 
-    global _mode, _verbose, _client, _skip_sync, _limit
-
     # Initialize necessary variables
+    global _mode, _verbose, _client, _skip_sync, _limit
     _mode = args.mode
     _verbose = args.verbose
     _skip_sync = args.skip_sync
@@ -91,7 +90,49 @@ def init(args):
 
     print "There are total of {} scaling rules detected".format(len(_current_rules))
 
+def load_scaling_groups():
+    """ Load all existing scaling group in aliyun and store in global _scaling_groups """
+    global _scaling_groups
+
+    page_size = 50
+    page_number = 1
+
+    req = DescribeScalingGroupsRequest.DescribeScalingGroupsRequest()
+    req.set_PageSize(page_size)
+    req.set_PageNumber(page_number)
+    
+    try:
+        resp_body = _client.do_action_with_exception(req)
+    except ClientException:
+        print "ERROR loading scaling groups from aliyun: API connection issue, please try again"
+        print sys.exc_info()
+        sys.exit()
+    resp_yaml = yaml.safe_load(resp_body)
+    total_count = int(resp_yaml['TotalCount'])
+    
+    _scaling_groups = {}
+    for a in resp_yaml['ScalingGroups']['ScalingGroup']:
+        _scaling_groups[a['ScalingGroupName']] = a['ScalingGroupId']
+    
+    while total_count > 0:
+        total_count -= page_size
+        page_number += 1
+
+        if total_count > 0:
+            time.sleep(1)
+            req.set_PageNumber(page_number)
+            try:
+                resp_body = _client.do_action_with_exception(req)
+            except ClientException:
+                print "ERROR loading scaling groups from aliyun: API connection issue, please try again"
+                print sys.exc_info()
+                sys.exit()
+            resp_yaml = yaml.safe_load(resp_body)
+            for a in resp_yaml['ScalingGroups']['ScalingGroup']:
+                _scaling_groups[a['ScalingGroupName']] = a['ScalingGroupId']
+
 def load_mode_config():
+    """ Load mode config from the selected mode yaml file into global _config variable """
     global _config
 
     __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -100,8 +141,8 @@ def load_mode_config():
             _config = yaml.safe_load(file)
         
         # Check config for possible typo
-        # Current check:
-        #   1. Downscale rule must have negative value (this is how aliyun differentiate 'increase by' with 'decrease by')
+        # Current checks:
+        #   1. Downscale rule must have negative value (this is how aliyun differentiate 'Increase by' with 'Decrease by')
         
         # Check #1
         for a in _config:
@@ -114,6 +155,7 @@ def load_mode_config():
         sys.exit(1)
 
 def load_current_rules():
+    """ Load current rules from aliyun or cached_rules.yaml file into global _current_rules variable """
     global _current_rules
 
     __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -141,14 +183,6 @@ def reconstruct_current_rules_cache():
                 ScalingRuleAri: ari:acs:ess:ap-southeast-1:12345:scalingrule/asr-blabla
                 ScalingRuleId: asr-blabla
                 ScalingRuleName: galadriel-banner-upscale
-            go-accounts-downscale:
-                AdjustmentType: PercentChangeInCapacity
-                AdjustmentValue: 20
-                Cooldown: 60
-                ScalingGroupId: asg-blabla
-                ScalingRuleAri: ari:acs:ess:ap-southeast-1:12345:scalingrule/asr-blabla
-                ScalingRuleId: asr-blabla
-                ScalingRuleName: go-accounts-downscale
             ...
     """
     page_size = 50
@@ -197,57 +231,15 @@ def reconstruct_current_rules_cache():
 def rule_type(rule_name):
     """ Returns 1 for upscale rule, 0 for downscale rule, -1 for unrecognized rule """
     # TODO: Use enumeration type to support more type in the future (in case we want more than just an upscale or downscale rule)
-
     if rule_name.find("-upscale") != -1:
         return 1
     elif rule_name.find("-downscale") != -1:
         return 0
     return -1
-
-def load_scaling_groups():
-    """
-        Load all existing scaling group in aliyun and store in global _scaling_groups
-    """
-    global _scaling_groups
-
-    page_size = 50
-    page_number = 1
-
-    req = DescribeScalingGroupsRequest.DescribeScalingGroupsRequest()
-    req.set_PageSize(page_size)
-    req.set_PageNumber(page_number)
-    
-    try:
-        resp_body = _client.do_action_with_exception(req)
-    except ClientException:
-        print "ERROR loading scaling groups from aliyun: API connection issue, please try again"
-        print sys.exc_info()
-        sys.exit()
-    resp_yaml = yaml.safe_load(resp_body)
-    total_count = int(resp_yaml['TotalCount'])
-    
-    _scaling_groups = {}
-    for a in resp_yaml['ScalingGroups']['ScalingGroup']:
-        _scaling_groups[a['ScalingGroupName']] = a['ScalingGroupId']
-    
-    while total_count > 0:
-        total_count -= page_size
-        page_number += 1
-
-        if total_count > 0:
-            time.sleep(1)
-            req.set_PageNumber(page_number)
-            try:
-                resp_body = _client.do_action_with_exception(req)
-            except ClientException:
-                print "ERROR loading scaling groups from aliyun: API connection issue, please try again"
-                print sys.exc_info()
-                sys.exit()
-            resp_yaml = yaml.safe_load(resp_body)
-            for a in resp_yaml['ScalingGroups']['ScalingGroup']:
-                _scaling_groups[a['ScalingGroupName']] = a['ScalingGroupId']
         
 def create_and_attach_scaling_rule(scaling_rule_name, scaling_group_name):
+    """ Create and attach a scaling rule into detected scaling group (only if the scaling group exists in aliyun) """
+    # We loaded existing scaling groups in aliyun into global _scaling_groups, so we can check if they exists
     if scaling_group_name not in _scaling_groups:
         print "WARNING '{}': Scaling group doesn't exists".format(scaling_group_name)
         return
@@ -282,6 +274,7 @@ def create_and_attach_scaling_rule(scaling_rule_name, scaling_group_name):
     print "CHANGED '{}': Created scaling rule and attached it to scaling group '{}'".format(scaling_rule_name, scaling_group_name)
 
 def get_rule(scaling_rule_name):
+    """ Safely retrieve a specified rule """
     try:
         # Getting rule from loaded config file
         new_rule = _config[scaling_rule_name]
@@ -298,6 +291,7 @@ def get_rule(scaling_rule_name):
     return new_rule
 
 def modify_scaling_rule(scaling_rule_name):
+    """ Modify a scaling rule in aliyun. Will skip if no value has been changed """
     new_rule = get_rule(scaling_rule_name)
     if not new_rule:
         return
@@ -353,6 +347,7 @@ def modify_scaling_rule(scaling_rule_name):
     _current_rules[scaling_rule_name]['Cooldown'] = new_rule['Cooldown']
 
 def dump_current_rules(rules, cache_path):
+    """ Save _current_rules into cache file """
     try:
         __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
         with open(os.path.join(__location__, cache_path), "w") as file:
@@ -361,6 +356,7 @@ def dump_current_rules(rules, cache_path):
         print "Error dumping current rules into cached_rules.yaml", sys.exc_info()
 
 def determine_scaling_group(rule_name):
+    """ Detect scaling group name of a scaling rule """
     is_upscale = rule_type(rule_name)
     if is_upscale == -1:
         return None
@@ -374,6 +370,7 @@ def determine_scaling_group(rule_name):
         return rule_name[:suffix_idx]
 
 def query_yes_no(msg):
+    """ Ask a yes/no question """
     # raw_input returns the empty string for "enter"
     yes = {'yes','y', 'ye', ''}
     no = {'no','n'}
