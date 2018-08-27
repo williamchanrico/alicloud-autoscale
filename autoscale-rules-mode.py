@@ -56,7 +56,7 @@ _scaling_groups = {}
 def init(args):
     """ Initialization """
 
-    global _mode, _verbose, _client, _skip_sync, _limit, _scaling_groups
+    global _mode, _verbose, _client, _skip_sync, _limit
 
     # Initialize necessary variables
     _mode = args.mode
@@ -80,7 +80,7 @@ def init(args):
 
     # Load current scaling groups that exist in aliyun
     print "Loading scaling groups information from aliyun"
-    _scaling_groups = retrieve_scaling_groups()
+    retrieve_scaling_groups()
 
     # Load selected mode config file
     print "Loading selected mode config from config/" + _mode + ".yaml"
@@ -206,8 +206,8 @@ def rule_type(rule_name):
 
 def retrieve_scaling_groups():
     """
-        Get all existing scaling group in aliyun
-        Will return a dictionary obj:
+        Get all existing scaling group in aliyun and store in global _scaling_groups
+        Will also return a dictionary obj:
             pgbouncer-operation: asg-blabla
             node-lite: asg-blabla
             go-transactionapp: asg-blabla
@@ -249,7 +249,10 @@ def retrieve_scaling_groups():
             resp_yaml = yaml.safe_load(resp_body)
             for a in resp_yaml['ScalingGroups']['ScalingGroup']:
                 groups[a['ScalingGroupName']] = a['ScalingGroupId']
-                
+
+    global _scaling_groups
+    _scaling_groups = groups
+
     return groups
         
 def create_and_attach_scaling_rule(scaling_rule_name, scaling_group_name):
