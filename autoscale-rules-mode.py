@@ -78,11 +78,9 @@ def init(args):
     )
 
     # Load current scaling groups that exist in aliyun
-    print "Loading scaling groups information from aliyun"
     load_scaling_groups()
 
     # Load selected mode config file
-    print "Loading selected mode config from config/" + _mode + ".yaml"
     load_mode_config()
 
     # Load current rules that are being used in aliyun
@@ -93,6 +91,8 @@ def init(args):
 def load_scaling_groups():
     """ Load all existing scaling group in aliyun and store in global _scaling_groups """
     global _scaling_groups
+
+    print "Loading scaling groups information from aliyun"
 
     page_size = 50
     page_number = 1
@@ -135,6 +135,7 @@ def load_mode_config():
     """ Load mode config from the selected mode yaml file into global _config variable """
     global _config
 
+    print "Loading selected mode config from config/" + _mode + ".yaml"
     __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
     try:
         with open(os.path.join(__location__, 'config/' + _mode + '.yaml')) as file:
