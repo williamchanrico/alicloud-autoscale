@@ -34,7 +34,7 @@ Using python `2.7.15`
 - The script will skip rules that hasn't been changed
 - The script assumes all rules follow our naming convention, `app-name-upscale` and `app-name-downscale`
 - Unlisted rule in selected `yaml` file will use the `default-autoscale`/`default-downscale` instead
-- Rules that are listed in `yaml` file but are not found in aliyun, can be added automatically depends on user's choice
+- Rules that are listed in `yaml` file but are not found in aliyun, can be added automatically depending on user's choice
 
 ```
 $ python2 autoscale-rules-mode.py --mode normal your_access_key your_secret_key region
