@@ -56,7 +56,7 @@ _scaling_groups = {}
 def init(args):
     """ Initialization """
 
-    global _mode, _verbose, _client, _current_rules, _skip_sync, _limit, _scaling_groups
+    global _mode, _verbose, _client, _skip_sync, _limit, _scaling_groups
 
     # Initialize necessary variables
     _mode = args.mode
@@ -87,18 +87,7 @@ def init(args):
     load_mode_config()
 
     # Load current rules that are being used in aliyun
-    __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-    if _skip_sync is True:
-        print "Loading current rules from cached_rules.yaml (not using real-time data from aliyun)"
-        try:
-            with open(os.path.join(__location__, 'cached_rules.yaml')) as file:
-                _current_rules = yaml.safe_load(file)
-        except:
-            print "The file cached_rules.yaml not found, syncing from aliyun anyway"
-            _current_rules = reconstruct_current_rules_cache()
-    else:
-        print "Loading current rules from aliyun (cached_rules.yaml is ignored)"
-        _current_rules = reconstruct_current_rules_cache()
+    load_current_rules()
 
     print "There are total of {} scaling rules detected".format(len(_current_rules))
 
@@ -123,6 +112,22 @@ def load_mode_config():
         print _mode, "Config file not found"
         print sys.exc_info()
         sys.exit(1)
+
+def load_current_rules():
+    global _current_rules
+
+    __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+    if _skip_sync is True:
+        print "Loading current rules from cached_rules.yaml (not using real-time data from aliyun)"
+        try:
+            with open(os.path.join(__location__, 'cached_rules.yaml')) as file:
+                _current_rules = yaml.safe_load(file)
+        except:
+            print "The file cached_rules.yaml not found, syncing from aliyun anyway"
+            _current_rules = reconstruct_current_rules_cache()
+    else:
+        print "Loading current rules from aliyun (cached_rules.yaml is ignored)"
+        _current_rules = reconstruct_current_rules_cache()
     
 def reconstruct_current_rules_cache():
     """
