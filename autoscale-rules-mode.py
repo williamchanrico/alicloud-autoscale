@@ -95,7 +95,7 @@ def init(args):
         
         # Check #1
         for a in _config:
-            if is_upscale_rule(a) == 0 and _config[a]['AdjustmentValue'] >= 0:
+            if rule_type(a) == 0 and _config[a]['AdjustmentValue'] >= 0:
                 print "ERROR {}: Downscale rule must have a negative 'AdjustmentValue', stopping script".format(a)
                 sys.exit(1)
     except IOError:
@@ -183,8 +183,10 @@ def reconstruct_current_rules_cache():
 
     return rules
 
-def is_upscale_rule(rule_name):
+def rule_type(rule_name):
     """ Returns 1 for upscale rule, 0 for downscale rule, -1 for unrecognized rule """
+    # TODO: Use enumeration type to support more type in the future (in case we want more than just an upscale or downscale rule)
+
     if rule_name.find("-upscale") != -1:
         return 1
     elif rule_name.find("-downscale") != -1:
@@ -280,9 +282,9 @@ def get_rule(scaling_rule_name):
     except KeyError:
         if _verbose:
             print scaling_rule_name, "config is not set in '{}.yaml', will proceed using default config".format(_mode)
-        if is_upscale_rule(scaling_rule_name) == 1:
+        if rule_type(scaling_rule_name) == 1:
             new_rule = _config['default-upscale']
-        elif is_upscale_rule(scaling_rule_name) == 0:
+        elif rule_type(scaling_rule_name) == 0:
             new_rule = _config['default-downscale']
         else:
             print "SKIPPED '{}': Can't determine whether that's an upscale or downscale rule".format(scaling_rule_name)
@@ -353,7 +355,7 @@ def dump_current_rules(rules, cache_path):
         print "Error dumping current rules into cached_rules.yaml", sys.exc_info()
 
 def determine_scaling_group(rule_name):
-    is_upscale = is_upscale_rule(rule_name)
+    is_upscale = rule_type(rule_name)
     if is_upscale == -1:
         return None
 
