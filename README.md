@@ -23,6 +23,12 @@ optional arguments:
   --version             show program's version number and exit
 ```
 
+## Dependencies
+Using python `2.7.15`
+- `pyyaml`
+- `aliyun-python-sdk-core`
+- `aliyun-python-sdk-ess`
+
 ## Example
 
 - The script will skip rules that hasn't been changed
