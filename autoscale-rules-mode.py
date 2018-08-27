@@ -80,7 +80,7 @@ def init(args):
 
     # Load current scaling groups that exist in aliyun
     print "Loading scaling groups information from aliyun"
-    # _scaling_groups = retrieve_scaling_groups()
+    _scaling_groups = retrieve_scaling_groups()
 
     # Load selected mode config file
     print "Loading selected mode config from config/" + _mode + ".yaml"
