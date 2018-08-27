@@ -264,6 +264,8 @@ def create_and_attach_scaling_rule(scaling_rule_name, scaling_group_name):
 
         # Send the modify request
         _client.do_action_with_exception(req)
+        
+        print "CHANGED '{}': Created scaling rule and attached it to scaling group '{}'".format(scaling_rule_name, scaling_group_name)
     except ClientException:
         print "ERROR '{}': API connection issue, please try again".format(scaling_rule_name)
         print sys.exc_info()
@@ -271,7 +273,6 @@ def create_and_attach_scaling_rule(scaling_rule_name, scaling_group_name):
     except:
         print "ERROR '{}'@'{}': {}".format(scaling_rule_name, scaling_group_name, sys.exc_info())
 
-    print "CHANGED '{}': Created scaling rule and attached it to scaling group '{}'".format(scaling_rule_name, scaling_group_name)
 
 def get_rule(scaling_rule_name):
     """ Safely retrieve a specified rule """
