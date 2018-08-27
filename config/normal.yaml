@@ -1,0 +1,27 @@
+# Normal mode: For everyday use
+
+# If there's no specified entry, the default config will be used
+# Add new entry with the corresponding Scaling Rule Action Name to replace default config
+
+default-upscale:                              # Scaling Rule Action Name (appname-upscale/appname-downscale)
+  AdjustmentType: PercentChangeInCapacity     # Action Type ('PercentChangeInCapacity' or 'QuantityChangeInCapacity')
+  AdjustmentValue: 50                         # Action Value (N or -N, do not forget the minus sign if you want a decrement e.g. -20)
+  Cooldown: 60                                # Cooldown Time (Seconds)
+default-downscale:
+  AdjustmentType: PercentChangeInCapacity
+  AdjustmentValue: -20
+  Cooldown: 60
+
+# Add your custom rule below
+go-testapp-upsca:                             # Examples of bad name, won't work
+  AdjustmentType: PercentChangeInCapacity
+  AdjustmentValue: 50
+  Cooldown: 60
+go-test-unadded-upscale:                      # Will try to find go-test-unadded scaling group and ask user if they want to add
+  AdjustmentType: PercentChangeInCapacity     # this upscale rule into that scaling group (only if that scaling group exists)
+  AdjustmentValue: 50
+  Cooldown: 60
+go-testapp-upscale:                           # Good, go-testapp follows the convention, be like go-testapp
+  AdjustmentType: PercentChangeInCapacity
+  AdjustmentValue: 40
+  Cooldown: 60
