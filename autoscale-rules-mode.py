@@ -417,11 +417,11 @@ def main(args):
         if not processed_mode_rules[a]:
             rule_scaling_group = determine_scaling_group(a)
             if rule_scaling_group != None:
-                print "{}: should belong to ScalingGroup={}".format(a, rule_scaling_group)
+                print "{}: Should belong to ScalingGroup={}".format(a, rule_scaling_group)
                 scaling_groups[a] = rule_scaling_group
                 not_found_rules = True
             else:
-                print "{}: can't determine its ScalingGroup, please check the naming convention (appname-upscale/appname-downscale)".format(a)
+                print "{}: Can't determine its ScalingGroup, please check the naming convention (appname-upscale/appname-downscale)".format(a)
                 processed_mode_rules[a] = True
 
     # Start creating rules if the scaling group exists and can be determined (only if user wants to)
