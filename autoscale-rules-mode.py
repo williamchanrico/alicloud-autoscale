@@ -80,7 +80,7 @@ def init(args):
 
     # Load current scaling groups that exist in aliyun
     print "Loading scaling groups information from aliyun"
-    retrieve_scaling_groups()
+    load_scaling_groups()
 
     # Load selected mode config file
     print "Loading selected mode config from config/" + _mode + ".yaml"
@@ -204,15 +204,12 @@ def rule_type(rule_name):
         return 0
     return -1
 
-def retrieve_scaling_groups():
+def load_scaling_groups():
     """
-        Get all existing scaling group in aliyun and store in global _scaling_groups
-        Will also return a dictionary obj:
-            pgbouncer-operation: asg-blabla
-            node-lite: asg-blabla
-            go-transactionapp: asg-blabla
-            ...
+        Load all existing scaling group in aliyun and store in global _scaling_groups
     """
+    global _scaling_groups
+
     page_size = 50
     page_number = 1
 
@@ -223,15 +220,15 @@ def retrieve_scaling_groups():
     try:
         resp_body = _client.do_action_with_exception(req)
     except ClientException:
-        print "ERROR retrieving scaling groups from aliyun: API connection issue, please try again"
+        print "ERROR loading scaling groups from aliyun: API connection issue, please try again"
         print sys.exc_info()
         sys.exit()
     resp_yaml = yaml.safe_load(resp_body)
     total_count = int(resp_yaml['TotalCount'])
     
-    groups = {}
+    _scaling_groups = {}
     for a in resp_yaml['ScalingGroups']['ScalingGroup']:
-        groups[a['ScalingGroupName']] = a['ScalingGroupId']
+        _scaling_groups[a['ScalingGroupName']] = a['ScalingGroupId']
     
     while total_count > 0:
         total_count -= page_size
@@ -243,21 +240,16 @@ def retrieve_scaling_groups():
             try:
                 resp_body = _client.do_action_with_exception(req)
             except ClientException:
-                print "ERROR retrieving scaling groups from aliyun: API connection issue, please try again"
+                print "ERROR loading scaling groups from aliyun: API connection issue, please try again"
                 print sys.exc_info()
                 sys.exit()
             resp_yaml = yaml.safe_load(resp_body)
             for a in resp_yaml['ScalingGroups']['ScalingGroup']:
-                groups[a['ScalingGroupName']] = a['ScalingGroupId']
-
-    global _scaling_groups
-    _scaling_groups = groups
-
-    return groups
+                _scaling_groups[a['ScalingGroupName']] = a['ScalingGroupId']
         
 def create_and_attach_scaling_rule(scaling_rule_name, scaling_group_name):
     if scaling_group_name not in _scaling_groups:
-        print "WARNING '{}': scaling group doesn't exists".format(scaling_group_name)
+        print "WARNING '{}': Scaling group doesn't exists".format(scaling_group_name)
         return
 
     new_rule = get_rule(scaling_rule_name)
