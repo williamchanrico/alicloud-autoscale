@@ -1,0 +1,51 @@
+# Normal mode: For everyday use
+
+# Add new entry in a new YAML file with the corresponding 
+# scaling rule action name to use custom config
+#
+# Example for go-accounts service, you can create it like this: 
+# > /config/normal/go-accounts.yaml
+#
+# go-accounts-upscale:                        # Scaling Rule Action Name (appname-upscale/appname-downscale)
+#   AdjustmentType: PercentChangeInCapacity   # Action Type ('PercentChangeInCapacity' or 'QuantityChangeInCapacity')
+#   AdjustmentValue: 50                       # Action Value (N or -N, do not forget the minus sign if you want a decrement e.g. -20)
+#   Cooldown: 60                              # Cooldown Time (Seconds)
+#   MetricItem: CpuUtilization
+#   Condition: Average
+#   ComparisonOperator: ">="
+#   Threshold: 60.0
+#   TriggerAfter: 3
+#   RefreshCycleSeconds: 60
+#
+# go-accounts-downscale:
+#   AdjustmentType: PercentChangeInCapacity
+#   AdjustmentValue: -20
+#   Cooldown: 60
+#   MetricItem: CpuUtilization
+#   Condition: Average
+#   ComparisonOperator: "<="
+#   Threshold: 20.0
+#   TriggerAfter: 3
+#   RefreshCycleSeconds: 60
+
+default-upscale:
+  AdjustmentType: PercentChangeInCapacity
+  AdjustmentValue: 50
+  Cooldown: 60
+  MetricItem: CpuUtilization
+  Condition: Average
+  ComparisonOperator: ">="
+  Threshold: 60.0
+  TriggerAfter: 3
+  RefreshCycleSeconds: 60
+  
+default-downscale:
+  AdjustmentType: PercentChangeInCapacity
+  AdjustmentValue: -20
+  Cooldown: 60
+  MetricItem: CpuUtilization
+  Condition: Average
+  ComparisonOperator: "<="
+  Threshold: 20.0
+  TriggerAfter: 3
+  RefreshCycleSeconds: 60
