@@ -1,9 +1,9 @@
 # Normal mode: For everyday use
 
-# Add new entry in a new YAML file with the corresponding 
+# Add new entry in a new YAML file with the corresponding
 # scaling rule action name to use custom config
 #
-# Example for go-accounts service, you can create it like this: 
+# Example for go-accounts service, you can create it like this:
 # > /config/normal/go-accounts.yaml
 #
 # go-accounts-upscale:                        # Scaling Rule Action Name (appname-upscale/appname-downscale)
@@ -28,6 +28,15 @@
 #   TriggerAfter: 3
 #   RefreshCycleSeconds: 60
 
+# If you want to specify the corresponding scaling group's min/max instance size,
+# add these two key value pairs in your scaling rule:
+
+# go-accounts-downscale:
+#   Adjustm...: PercentChangeInCapacity
+#   ...
+#   MinInstance: 4      <=
+#   MaxInstance: 20     <=
+
 default-upscale:
   AdjustmentType: PercentChangeInCapacity
   AdjustmentValue: 50
@@ -38,7 +47,7 @@ default-upscale:
   Threshold: 60.0
   TriggerAfter: 3
   RefreshCycleSeconds: 60
-  
+
 default-downscale:
   AdjustmentType: PercentChangeInCapacity
   AdjustmentValue: -20
