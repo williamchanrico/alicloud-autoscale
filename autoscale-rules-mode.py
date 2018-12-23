@@ -65,6 +65,7 @@ _limit = []
 _scaling_groups = {}
 _event_trigger_tasks = {}
 
+
 def init(args):
     """ Initialization """
     # Initialize necessary variables
@@ -77,10 +78,11 @@ def init(args):
     if _limit[0] == '':
         _limit = None
 
-    logging.basicConfig(format='\n[%(asctime)s] %(message)s',
-                        datefmt='%d/%m/%Y %I:%M:%S %p',
-                        filename=args.log_file,
-                        level=logging.DEBUG)
+    logging.basicConfig(
+        format='\n[%(asctime)s] %(message)s',
+        datefmt='%d/%m/%Y %I:%M:%S %p',
+        filename=args.log_file,
+        level=logging.DEBUG)
 
     access_key_id = args.access_key_id
     access_key_secret = args.access_key_secret
@@ -88,11 +90,7 @@ def init(args):
 
     # Initialize AcsClient obj to consume the core API
     print "Initializing API client object using the configured access key"
-    _client = AcsClient(
-        access_key_id,
-        access_key_secret,
-        region_id
-    )
+    _client = AcsClient(access_key_id, access_key_secret, region_id)
 
     # Load selected mode config file
     load_mode_config()
@@ -106,7 +104,9 @@ def init(args):
     # Load current event trigger tasks that exist in aliyun
     load_event_trigger_tasks()
 
-    print "There are total of {} scaling rules detected".format(len(_current_rules))
+    print "There are total of {} scaling rules detected".format(
+        len(_current_rules))
+
 
 def load_event_trigger_tasks():
     """ Load all existing event-trigger tasks in aliyun and store in global _scaling_groups """
@@ -149,7 +149,9 @@ def load_event_trigger_tasks():
         if total_count <= 0:
             break
 
-    logging.debug("Loaded Event-trigger Tasks: {}".format(_event_trigger_tasks))
+    logging.debug(
+        "Loaded Event-trigger Tasks: {}".format(_event_trigger_tasks))
+
 
 def load_scaling_groups():
     """ Load all existing scaling group in aliyun and store in global _scaling_groups """
@@ -181,7 +183,10 @@ def load_scaling_groups():
 
         for a in resp_yaml['ScalingGroups']['ScalingGroup']:
             _scaling_groups[a['ScalingGroupName']] = a['ScalingGroupId']
-            _scaling_groups[a['ScalingGroupId']] = {'MinInstance': a['MinSize'], 'MaxInstance': a['MaxSize']}
+            _scaling_groups[a['ScalingGroupId']] = {
+                'MinInstance': a['MinSize'],
+                'MaxInstance': a['MaxSize']
+            }
 
         total_count -= page_size
         page_number += 1
@@ -191,12 +196,14 @@ def load_scaling_groups():
 
     logging.debug("Loaded Scaling Groups: {}".format(_scaling_groups))
 
+
 def load_mode_config():
     """ Load mode config from the selected mode yaml file into global _config variable """
     global _config
 
     print "Loading selected mode config from config/" + _mode + "/*.yaml"
-    __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+    __location__ = os.path.realpath(
+        os.path.join(os.getcwd(), os.path.dirname(__file__)))
     config_path = os.path.join(__location__, 'config/' + _mode + '/*.yaml')
     try:
         for a in glob.glob(config_path):
@@ -213,13 +220,15 @@ def load_mode_config():
         for a in _config:
             # Check 1: Downscale rule must have negative 'AdjustmentValue'
             if rule_type(a) == 0 and _config[a]['AdjustmentValue'] >= 0:
-                print "ERROR {}: Downscale rule must have a negative 'AdjustmentValue', stopping script".format(a)
+                print "ERROR {}: Downscale rule must have a negative 'AdjustmentValue', stopping script".format(
+                    a)
                 sys.exit(1)
 
             # Check 2: MinInstance value must be at least 2
             if 'MinInstance' in _config[a]:
                 if _config[a]['MinInstance'] < 2:
-                    print "ERROR {}: MinInstance value must be at least 2".format(a)
+                    print "ERROR {}: MinInstance value must be at least 2".format(
+                        a)
                     sys.exit(1)
 
     except IOError:
@@ -229,11 +238,13 @@ def load_mode_config():
 
     logging.debug("Loaded Config {}/*.yaml: {}".format(_mode, _config))
 
+
 def load_current_rules():
     """ Load current rules from aliyun or cached_rules.yaml file into global _current_rules variable """
     global _current_rules
 
-    __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+    __location__ = os.path.realpath(
+        os.path.join(os.getcwd(), os.path.dirname(__file__)))
     if _skip_sync is True:
         print "Loading current rules from cached_rules.yaml (not using real-time data from aliyun)"
         try:
@@ -247,6 +258,7 @@ def load_current_rules():
         _current_rules = reconstruct_current_rules_cache()
 
     logging.debug("Loaded current rules: {}".format(_current_rules))
+
 
 def reconstruct_current_rules_cache():
     """
@@ -298,6 +310,7 @@ def reconstruct_current_rules_cache():
 
     return rules
 
+
 def modify_event_trigger_task(scaling_rule_name):
     # WEIRD ModifyAlarmRequest can't modify most attributes,
     # wait till aliyun dev update their API
@@ -309,7 +322,10 @@ def modify_event_trigger_task(scaling_rule_name):
     # Compare old and new rule, skip is nothing was changed
     skip = True
     current_rule = _event_trigger_tasks[scaling_rule_name]
-    event_trigger_task_attr = ["MetricItem", "Condition", "ComparisonOperator", "Threshold", "TriggerAfter", "RefreshCycleSeconds"]
+    event_trigger_task_attr = [
+        "MetricItem", "Condition", "ComparisonOperator", "Threshold",
+        "TriggerAfter", "RefreshCycleSeconds"
+    ]
     for a in event_trigger_task_attr:
         try:
             if new_rule[a] != current_rule[a]:
@@ -320,7 +336,8 @@ def modify_event_trigger_task(scaling_rule_name):
             break
 
     if skip is True:
-        print "SKIPPED '{}': No difference between the current and the new event trigger task rule".format(scaling_rule_name)
+        print "SKIPPED '{}': No difference between the current and the new event trigger task rule".format(
+            scaling_rule_name)
         return True
 
     try:
@@ -329,14 +346,16 @@ def modify_event_trigger_task(scaling_rule_name):
 
         # Setting request parameters
         # Necessary: Yes, to specify the Event-trigger Task to modify
-        req.set_AlarmTaskId(_event_trigger_tasks[scaling_rule_name]["AlarmTaskId"])
+        req.set_AlarmTaskId(
+            _event_trigger_tasks[scaling_rule_name]["AlarmTaskId"])
         req.set_Name(scaling_rule_name)
         # req.set_MetricName(str(new_rule["MetricItem"]))
         # req.set_Statistics(str(new_rule["Condition"]))
         # req.set_ComparisionOperator(str(new_rule["ComparisonOperator"]))
         # req.set_Threshold(new_rule["Threshold"])
         alarm_actions = []
-        alarm_actions.append(str(_current_rules[scaling_rule_name]["ScalingRuleAri"]))
+        alarm_actions.append(
+            str(_current_rules[scaling_rule_name]["ScalingRuleAri"]))
         req.set_AlarmActions(alarm_actions)
 
         # Necessary: No, to set other values we want
@@ -345,17 +364,21 @@ def modify_event_trigger_task(scaling_rule_name):
         # Send the modify request
         _client.do_action_with_exception(req)
 
-        print "CHANGED '{}': Successfully modified event trigger task".format(scaling_rule_name)
+        print "CHANGED '{}': Successfully modified event trigger task".format(
+            scaling_rule_name)
 
         return True
     except ClientException:
-        print "ERROR '{}': API connection issue, please try again".format(scaling_rule_name)
+        print "ERROR '{}': API connection issue, please try again".format(
+            scaling_rule_name)
         print sys.exc_value
         print ""
         return False
     except:
-        print "ERROR in modifying event trigger task {}: {}".format(scaling_rule_name, sys.exc_info())
+        print "ERROR in modifying event trigger task {}: {}".format(
+            scaling_rule_name, sys.exc_info())
         return False
+
 
 def delete_event_trigger_task(scaling_rule_name):
     """
@@ -374,7 +397,8 @@ def delete_event_trigger_task(scaling_rule_name):
 
     if not existed:
         if _verbose:
-            print "ERROR '{}': Event trigger task don't exists, can't delete it".format(scaling_rule_name)
+            print "ERROR '{}': Event trigger task don't exists, can't delete it".format(
+                scaling_rule_name)
         return True
 
     try:
@@ -384,18 +408,22 @@ def delete_event_trigger_task(scaling_rule_name):
 
         _client.do_action_with_exception(req)
 
-        print "CHANGED '{}': Deleted event trigger task".format(scaling_rule_name)
+        print "CHANGED '{}': Deleted event trigger task".format(
+            scaling_rule_name)
         logging.debug("Deleted Event-trigger task: {}".format(current_rule))
 
         return True
     except ClientException:
-        print "ERROR '{}': API connection issue, please try again".format(scaling_rule_name)
+        print "ERROR '{}': API connection issue, please try again".format(
+            scaling_rule_name)
         print sys.exc_value
         print ""
         return False
     except:
-        print "ERROR in deleting event trigger task {}: {}".format(scaling_rule_name, sys.exc_info())
+        print "ERROR in deleting event trigger task {}: {}".format(
+            scaling_rule_name, sys.exc_info())
         return False
+
 
 def disable_event_trigger_task(event_trigger_task_id):
     """ Disable specific Event-trigger task by ID """
@@ -407,17 +435,21 @@ def disable_event_trigger_task(event_trigger_task_id):
         _client.do_action_with_exception(req)
 
         print "CHANGED: Disabled the event trigger task according to the old one"
-        logging.debug("Disabled Event-trigger Task: {}".format(event_trigger_task_id))
+        logging.debug(
+            "Disabled Event-trigger Task: {}".format(event_trigger_task_id))
 
         return True
     except ClientException:
-        print "ERROR '{}': API connection issue, please try again".format(event_trigger_task_id)
+        print "ERROR '{}': API connection issue, please try again".format(
+            event_trigger_task_id)
         print sys.exc_value
         print ""
         return False
     except:
-        print "ERROR in disabling event trigger task {}: {}".format(event_trigger_task_id, sys.exc_info())
+        print "ERROR in disabling event trigger task {}: {}".format(
+            event_trigger_task_id, sys.exc_info())
         return False
+
 
 def create_event_trigger_task(scaling_rule_name):
     """
@@ -446,10 +478,14 @@ def create_event_trigger_task(scaling_rule_name):
     skip = True
     delete_after = False
     enable = True
-    event_trigger_task_attr = ["MetricItem", "Condition", "ComparisonOperator", "Threshold", "TriggerAfter", "RefreshCycleSeconds"]
+    event_trigger_task_attr = [
+        "MetricItem", "Condition", "ComparisonOperator", "Threshold",
+        "TriggerAfter", "RefreshCycleSeconds"
+    ]
     if existed:
         try:
-            if len(current_rule["alarmActions"]["alarmAction"]) == 0 or current_rule["bypass_skip"]:
+            if len(current_rule["alarmActions"]
+                   ["alarmAction"]) == 0 or current_rule["bypass_skip"]:
                 skip = False
         except KeyError:
             pass
@@ -471,7 +507,8 @@ def create_event_trigger_task(scaling_rule_name):
         skip = False
 
     if skip is True:
-        print "SKIPPED '{}': No difference between the current and the new event trigger task rule".format(scaling_rule_name)
+        print "SKIPPED '{}': No difference between the current and the new event trigger task rule".format(
+            scaling_rule_name)
         return True
 
     # Finally, if skip is False, then we f'ing do it
@@ -482,13 +519,15 @@ def create_event_trigger_task(scaling_rule_name):
         # Setting request parameters
         # Necessary: Yes, to specify the rule and which scaling group to attach the rule to
         req.set_Name(scaling_rule_name)
-        req.set_ScalingGroupId(_current_rules[scaling_rule_name]["ScalingGroupId"])
+        req.set_ScalingGroupId(
+            _current_rules[scaling_rule_name]["ScalingGroupId"])
         req.set_MetricName(str(new_rule["MetricItem"]))
         req.set_Statistics(str(new_rule["Condition"]))
         req.set_ComparisonOperator(str(new_rule["ComparisonOperator"]))
         req.set_Threshold(new_rule["Threshold"])
         alarm_actions = []
-        alarm_actions.append(str(_current_rules[scaling_rule_name]["ScalingRuleAri"]))
+        alarm_actions.append(
+            str(_current_rules[scaling_rule_name]["ScalingRuleAri"]))
         req.set_AlarmActions(alarm_actions)
 
         # Necessary: No, to set other values we want
@@ -499,30 +538,38 @@ def create_event_trigger_task(scaling_rule_name):
         resp_body = _client.do_action_with_exception(req)
         resp_yaml = yaml.safe_load(resp_body)
 
-        print "CHANGED '{}': Successfully created event trigger task".format(scaling_rule_name)
-        logging.debug("Created Event-trigger Task {}: {}".format(scaling_rule_name, new_rule))
+        print "CHANGED '{}': Successfully created event trigger task".format(
+            scaling_rule_name)
+        logging.debug("Created Event-trigger Task {}: {}".format(
+            scaling_rule_name, new_rule))
 
         # Existing task was disabled, so we also disable the newly created one
         if not enable:
             if not disable_event_trigger_task(resp_yaml["AlarmTaskId"]):
-                print "ERROR '{}': Failed to disable newly created task (old task was disabled), send help, disable them manually".format(scaling_rule_name)
+                print "ERROR '{}': Failed to disable newly created task (old task was disabled), send help, disable them manually".format(
+                    scaling_rule_name)
 
         # We delete the old one to prevent duplicate task in aliyun
         if delete_after:
-            print "Deleting old '{}' event trigger task".format(scaling_rule_name)
+            print "Deleting old '{}' event trigger task".format(
+                scaling_rule_name)
             if not delete_event_trigger_task(scaling_rule_name):
-                print "ERROR '{}': Failed to delete old task, there will be duplicate task, send help, delete them manually".format(scaling_rule_name)
+                print "ERROR '{}': Failed to delete old task, there will be duplicate task, send help, delete them manually".format(
+                    scaling_rule_name)
                 return False
 
         return True
     except ClientException:
-        print "ERROR '{}': API connection issue, please try again".format(scaling_rule_name)
+        print "ERROR '{}': API connection issue, please try again".format(
+            scaling_rule_name)
         print sys.exc_value
         print ""
         return False
     except:
-        print "ERROR in creating event trigger task {}: {}".format(scaling_rule_name, sys.exc_info())
+        print "ERROR in creating event trigger task {}: {}".format(
+            scaling_rule_name, sys.exc_info())
         return False
+
 
 def rule_type(rule_name):
     """ Returns 1 for upscale rule, 0 for downscale rule, -1 for unrecognized rule """
@@ -533,6 +580,7 @@ def rule_type(rule_name):
         return 0
     logging.debug("Unrecognized rule: {}".format(rule_name))
     return -1
+
 
 def create_and_attach_scaling_rule(scaling_rule_name, scaling_group_name):
     """ Create and attach a scaling rule into detected scaling group (only if the scaling group exists in aliyun) """
@@ -557,18 +605,24 @@ def create_and_attach_scaling_rule(scaling_rule_name, scaling_group_name):
         # Send the modify request
         _client.do_action_with_exception(req)
 
-        print "CHANGED '{}': Created scaling rule and attached it to scaling group '{}'".format(scaling_rule_name, scaling_group_name)
-        logging.debug("Created Scaling Rule and attached it to Scaling Group {}: {}".format(scaling_group_name, new_rule))
+        print "CHANGED '{}': Created scaling rule and attached it to scaling group '{}'".format(
+            scaling_rule_name, scaling_group_name)
+        logging.debug(
+            "Created Scaling Rule and attached it to Scaling Group {}: {}".
+            format(scaling_group_name, new_rule))
 
         return True
     except ClientException:
-        print "ERROR '{}': API connection issue, please try again".format(scaling_rule_name)
+        print "ERROR '{}': API connection issue, please try again".format(
+            scaling_rule_name)
         print sys.exc_value
         print ""
         return False
     except:
-        print "ERROR '{}'@'{}': {}".format(scaling_rule_name, scaling_group_name, sys.exc_info)
+        print "ERROR '{}'@'{}': {}".format(scaling_rule_name,
+                                           scaling_group_name, sys.exc_info)
         return False
+
 
 def get_rule(scaling_rule_name):
     """ Safely retrieve a specified rule """
@@ -577,15 +631,18 @@ def get_rule(scaling_rule_name):
         new_rule = _config[scaling_rule_name]
     except KeyError:
         if _verbose:
-            print scaling_rule_name, "config is not set in '{}' mode config, will proceed using default config".format(_mode)
+            print scaling_rule_name, "config is not set in '{}' mode config, will proceed using default config".format(
+                _mode)
         if rule_type(scaling_rule_name) == 1:
             new_rule = _config['default-upscale']
         elif rule_type(scaling_rule_name) == 0:
             new_rule = _config['default-downscale']
         else:
-            print "SKIPPED '{}': Can't determine whether that's an upscale or downscale rule".format(scaling_rule_name)
+            print "SKIPPED '{}': Can't determine whether that's an upscale or downscale rule".format(
+                scaling_rule_name)
             return None
     return new_rule
+
 
 def modify_scaling_rule(scaling_rule_name):
     """ Modify a scaling rule in aliyun. Will skip if no value has been changed """
@@ -611,7 +668,8 @@ def modify_scaling_rule(scaling_rule_name):
             break
 
     if skip is True:
-        print "SKIPPED '{}': No difference between the current and the new rule".format(scaling_rule_name)
+        print "SKIPPED '{}': No difference between the current and the new rule".format(
+            scaling_rule_name)
         return True
 
     try:
@@ -620,7 +678,8 @@ def modify_scaling_rule(scaling_rule_name):
 
         # Setting request parameters
         # Necessary: Yes, to specify which scaling rules in aliyun that we're changing
-        req.set_ScalingRuleId(str(_current_rules[scaling_rule_name]['ScalingRuleId']))
+        req.set_ScalingRuleId(
+            str(_current_rules[scaling_rule_name]['ScalingRuleId']))
 
         # Necessary: No, to set new values we want to replace
         req.set_AdjustmentType(new_rule['AdjustmentType'])
@@ -631,23 +690,31 @@ def modify_scaling_rule(scaling_rule_name):
         _client.do_action_with_exception(req)
 
         # Apply changes into _current_rules too so we can cache it
-        _current_rules[scaling_rule_name]['AdjustmentType'] = new_rule['AdjustmentType']
-        _current_rules[scaling_rule_name]['AdjustmentValue'] = new_rule['AdjustmentValue']
+        _current_rules[scaling_rule_name]['AdjustmentType'] = new_rule[
+            'AdjustmentType']
+        _current_rules[scaling_rule_name]['AdjustmentValue'] = new_rule[
+            'AdjustmentValue']
         _current_rules[scaling_rule_name]['Cooldown'] = new_rule['Cooldown']
 
-        print "CHANGED '{}': Successfully modified the scaling rule".format(scaling_rule_name)
-        logging.debug("Modified Scaling Rule {}:\nOLD => {}\n\nNEW => {}".format(scaling_rule_name, current_rule, new_rule))
+        print "CHANGED '{}': Successfully modified the scaling rule".format(
+            scaling_rule_name)
+        logging.debug(
+            "Modified Scaling Rule {}:\nOLD => {}\n\nNEW => {}".format(
+                scaling_rule_name, current_rule, new_rule))
 
         return True
     except KeyError:
         global _skip_sync
         if _skip_sync is True:
-            print "WARNING '{}': Scaling rule does not exist, try running the script without --skip-sync flag".format(scaling_rule_name)
+            print "WARNING '{}': Scaling rule does not exist, try running the script without --skip-sync flag".format(
+                scaling_rule_name)
         else:
-            print "WARNING '{}': Scaling rule does not exist in aliyun, have you created the scaling rule in aliyun?".format(scaling_rule_name)
+            print "WARNING '{}': Scaling rule does not exist in aliyun, have you created the scaling rule in aliyun?".format(
+                scaling_rule_name)
         return False
     except ClientException:
-        print "ERROR '{}': API connection issue, please try again".format(scaling_rule_name)
+        print "ERROR '{}': API connection issue, please try again".format(
+            scaling_rule_name)
         print sys.exc_value
         print ""
         return False
@@ -655,14 +722,17 @@ def modify_scaling_rule(scaling_rule_name):
         print "ERROR '{}': {}".format(scaling_rule_name, sys.exc_info)
         return False
 
+
 def dump_current_rules(rules, cache_path):
     """ Save _current_rules into cache file """
     try:
-        __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+        __location__ = os.path.realpath(
+            os.path.join(os.getcwd(), os.path.dirname(__file__)))
         with open(os.path.join(__location__, cache_path), "w") as file:
             yaml.dump(rules, file, default_flow_style=False)
     except:
         print "Error dumping current rules into cached_rules.yaml", sys.exc_value
+
 
 def determine_scaling_group(rule_name):
     """ Detect scaling group name of a scaling rule """
@@ -677,6 +747,7 @@ def determine_scaling_group(rule_name):
     else:
         suffix_idx = rule_name.find("-downscale")
         return rule_name[:suffix_idx]
+
 
 def modify_scaling_group_size(scaling_rule_name, min_instance, max_instance):
     """
@@ -712,12 +783,18 @@ def modify_scaling_group_size(scaling_rule_name, min_instance, max_instance):
         # Send the modify request
         _client.do_action_with_exception(req)
 
-        print "CHANGED '{}': Successfully modified the scaling group min ({} to {}) and max ({} to {}) instance".format(rule_scaling_group, old_min_instance, min_instance, old_max_instance, max_instance)
-        logging.debug("Modified Scaling Group Size {}:\nOLD => MinInstance: {}, MaxInstance: {}\n\nNEW => MinInstance: {}, MaxInstance: {}".format(rule_scaling_group, old_min_instance, old_max_instance, min_instance, max_instance))
+        print "CHANGED '{}': Successfully modified the scaling group min ({} to {}) and max ({} to {}) instance".format(
+            rule_scaling_group, old_min_instance, min_instance,
+            old_max_instance, max_instance)
+        logging.debug(
+            "Modified Scaling Group Size {}:\nOLD => MinInstance: {}, MaxInstance: {}\n\nNEW => MinInstance: {}, MaxInstance: {}"
+            .format(rule_scaling_group, old_min_instance, old_max_instance,
+                    min_instance, max_instance))
 
         return True
     except ClientException:
-        print "ERROR '{}': API connection issue, please try again".format(scaling_rule_name)
+        print "ERROR '{}': API connection issue, please try again".format(
+            scaling_rule_name)
         print sys.exc_value
         print ""
         return False
@@ -726,14 +803,15 @@ def modify_scaling_group_size(scaling_rule_name, min_instance, max_instance):
         return False
     return True
 
+
 def query_yes_no(msg):
     """ Ask a yes/no question """
     if _noconfirm:
         return True
 
     # raw_input returns the empty string for "enter"
-    yes = {'yes','y', 'ye', ''}
-    no = {'no','n'}
+    yes = {'yes', 'y', 'ye', ''}
+    no = {'no', 'n'}
 
     while True:
         print msg, "[Y/n]",
@@ -745,10 +823,12 @@ def query_yes_no(msg):
         else:
             sys.stdout.write("Please respond with 'yes' or 'no'")
 
+
 def clear_prev_line_if_not(printed):
     """ Just to make the stdout cleaner """
     if not printed:
         print "\033[A                                                                                                                                               \033[A"
+
 
 def main(args):
     """ Main entry point """
@@ -758,12 +838,13 @@ def main(args):
 
     # Start modifying rules
     print "\nModifying scaling rules:"
-    processed_mode_rules = {}   # Keep track of rules we want to processed (False means not yet processed)
+    processed_mode_rules = {
+    }  # Keep track of rules we want to processed (False means not yet processed)
     for a in _config:
         if a.find("default-") == -1:
             if _limit and a in _limit:  # If --limit is used, only process the ones in limit
                 processed_mode_rules[a] = False
-            elif not _limit:            # Process all loaded rules otherwise
+            elif not _limit:  # Process all loaded rules otherwise
                 processed_mode_rules[a] = False
 
     # If --limit was used, only include those in --limit arguments into
@@ -781,7 +862,8 @@ def main(args):
     for a in _config:
         if 'MinInstance' not in _config[a] or 'MaxInstance' not in _config[a]:
             continue
-        if modify_scaling_group_size(a, _config[a]['MinInstance'], _config[a]['MaxInstance']):
+        if modify_scaling_group_size(a, _config[a]['MinInstance'],
+                                     _config[a]['MaxInstance']):
             printed = True
 
     # Clear previous line if no entry was printed, to avoid confusion in stdout
@@ -796,19 +878,25 @@ def main(args):
             rule_scaling_group = determine_scaling_group(a)
             printed = True
             if rule_scaling_group != None:
-                print "{}: Should belong to ScalingGroup={}".format(a, rule_scaling_group)
+                print "{}: Should belong to ScalingGroup={}".format(
+                    a, rule_scaling_group)
                 if rule_scaling_group not in _scaling_groups:
-                    print "WARNING '{}': Scaling group doesn't exists".format(rule_scaling_group)
+                    print "WARNING '{}': Scaling group doesn't exists".format(
+                        rule_scaling_group)
                 else:
-                    add_new_rule = query_yes_no("Do you want to create {} rule and attach to {} scaling group in aliyun?".format(a, rule_scaling_group))
+                    add_new_rule = query_yes_no(
+                        "Do you want to create {} rule and attach to {} scaling group in aliyun?"
+                        .format(a, rule_scaling_group))
                     if add_new_rule:
-                        if create_and_attach_scaling_rule(a, rule_scaling_group):
+                        if create_and_attach_scaling_rule(
+                                a, rule_scaling_group):
                             processed_mode_rules[a] = True
                             if a in _event_trigger_tasks:
                                 _event_trigger_tasks[a]["bypass_skip"] = True
                             added_one_or_more_rules = True
             else:
-                print "{}: Please check the naming convention (appname-upscale/appname-downscale)".format(a)
+                print "{}: Please check the naming convention (appname-upscale/appname-downscale)".format(
+                    a)
 
     clear_prev_line_if_not(printed)
 
@@ -817,8 +905,9 @@ def main(args):
         print "Reloading current rules from aliyun"
         _current_rules = reconstruct_current_rules_cache()
 
-    found_event_trigger_tasks = {}      # Event-trigger Tasks that exist in aliyun
-    not_found_event_trigger_tasks = {}  # Event-trigger Tasks that aren't found in aliyun
+    found_event_trigger_tasks = {}  # Event-trigger Tasks that exist in aliyun
+    not_found_event_trigger_tasks = {
+    }  # Event-trigger Tasks that aren't found in aliyun
 
     # Flag all loaded Event-trigger Tasks as not having valid name
     for a in _event_trigger_tasks:
@@ -829,11 +918,13 @@ def main(args):
     # they want to delete them at the end
     for a in processed_mode_rules:
         if processed_mode_rules[a]:
-            if a in _event_trigger_tasks:   # If the rule exists in aliyun
-                found_event_trigger_tasks[a] = _event_trigger_tasks[a] # Means we will process them
+            if a in _event_trigger_tasks:  # If the rule exists in aliyun
+                found_event_trigger_tasks[a] = _event_trigger_tasks[
+                    a]  # Means we will process them
                 _event_trigger_tasks[a]["valid_name"] = True
             else:
-                not_found_event_trigger_tasks[a] = a    # Means we will ask user if they want to add it or not
+                not_found_event_trigger_tasks[
+                    a] = a  # Means we will ask user if they want to add it or not
 
     print "\nProcessing found event triggered task in aliyun:"
     printed = False
@@ -850,7 +941,8 @@ def main(args):
             if _limit and a not in _limit:
                 continue
             printed = True
-            print "INVALID '{}': Event trigger task in aliyun, you can choose to delete it at the end of this script".format(a)
+            print "INVALID '{}': Event trigger task in aliyun, you can choose to delete it at the end of this script".format(
+                a)
 
     clear_prev_line_if_not(printed)
 
@@ -859,7 +951,9 @@ def main(args):
     for a in not_found_event_trigger_tasks:
         printed = True
         print a
-        cont = query_yes_no("Create new one? (consult with above list, maybe it exists under INVALID)")
+        cont = query_yes_no(
+            "Create new one? (consult with above list, maybe it exists under INVALID)"
+        )
         if not cont:
             continue
         create_event_trigger_task(a)
@@ -884,14 +978,18 @@ def main(args):
     print "\nCaching all changed rules into cached_rules.yaml"
     reconstruct_current_rules_cache()
 
+
 if __name__ == "__main__":
     """ This is executed when run from the command line """
     parser = argparse.ArgumentParser()
 
     # Access Key
-    parser.add_argument("access_key_id", help="Accesskey ID for aliyun account")
-    parser.add_argument("access_key_secret", help="AccessKey secret for aliyun account")
-    parser.add_argument("region_id", help="ID of the region where the service is called")
+    parser.add_argument(
+        "access_key_id", help="Accesskey ID for aliyun account")
+    parser.add_argument(
+        "access_key_secret", help="AccessKey secret for aliyun account")
+    parser.add_argument(
+        "region_id", help="ID of the region where the service is called")
 
     # Optional argument which requires a parameter (eg. -m grammy)
     parser.add_argument(
@@ -918,7 +1016,8 @@ if __name__ == "__main__":
         action="store",
         dest="log_file",
         default="log/autoscale_rules_mode.log",
-        help="Absolute path for log file, default: 'log/autoscale_rules_mode.log'")
+        help=
+        "Absolute path for log file, default: 'log/autoscale_rules_mode.log'")
 
     # Optional flag, decides whether to sync from aliyun or cached yaml file (faster if skipped, but only skip if you know what you're doing)
     parser.add_argument(
@@ -926,7 +1025,8 @@ if __name__ == "__main__":
         "--skip-sync",
         dest="skip_sync",
         action="store_true",
-        help="Skip synching cached_rules.yaml for faster runtime if you're sure that no rules has been changed in aliyun"
+        help=
+        "Skip synching cached_rules.yaml for faster runtime if you're sure that no rules has been changed in aliyun"
     )
 
     # Optional verbosity counter (eg. -v, -vv, -vvv, etc.)
