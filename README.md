@@ -1,12 +1,8 @@
-# Autoscale Rules Mode
+# Alicloud Autoscale
 
-Script to automate the setting of autoscale config in aliyun, based on config files
+A small side-project to automate autoscale configurations in Alibaba Cloud.
 
-Default config dir is `./config/normal`, so just add `your-app-name.yaml` there if you're not sure.
-
-Follow the example in `./config/normal/default.yaml`
-
-## Workflow
+## How It Works
 
 - Scan all existing Scaling Rules, Scaling Groups, and Event-trigger Tasks.
 - Compare all Scaling Rules with selected config files (default is `./config/normal/*.yaml`)
@@ -17,10 +13,14 @@ Follow the example in `./config/normal/default.yaml`
 - Will ask if user wants to delete invalid Event-trigger Tasks
 
 Few things to note:
-- The script assumes that all rules follow our naming convention, `app-name-upscale` and `app-name-downscale`
+- The script assumes that all rules follow this naming convention, `app-name-upscale` and `app-name-downscale`
 - Unlisted rule in the selected `yaml` file will use the `default-autoscale`/`default-downscale` values instead
 
 ## Usage
+
+Default config dir is `./config/normal`, so adding `your-app-name.yaml` there is fine.
+
+Follow the example in `./config/normal/default.yaml`
 
 ```
 $ python2 autoscale-rules-mode.py --help
@@ -68,16 +68,8 @@ There are total of 136 scaling rules detected
 
 Modifying scaling rules:
 SKIPPED 'go-cartapp-upscale': No difference between the current and the new rule
-SKIPPED 'go-wallet-upscale': No difference between the current and the new rule
 SKIPPED 'node-frontend-discovery-home-downscale': No difference between the current and the new rule
-SKIPPED 'go-mojito-wishlist-upscale': No difference between the current and the new rule
-.
-.
-.
-SKIPPED 'go-mojito-wishlist-downscale': No difference between the current and the new rule
-SKIPPED 'node-frontend-discovery-misc-upscale': No difference between the current and the new rule
-SKIPPED 'pgbouncer-merchant-downscale': No difference between the current and the new rule
-SKIPPED 'go-feeds-downscale': No difference between the current and the new rule
+...
 
 These rules are not found in aliyun:
 go-test-unadded-upscale: Should belong to ScalingGroup=go-test-unadded
@@ -87,15 +79,7 @@ go-testapp-downsdfadkf: Please check the naming convention (appname-upscale/appn
 Processing found event triggered task in aliyun:
 SKIPPED 'go-cartapp-upscale': No difference between the current and the new event trigger task rule
 SKIPPED 'go-wallet-upscale': No difference between the current and the new event trigger task rule
-SKIPPED 'node-frontend-discovery-home-downscale': No difference between the current and the new event trigger task rule
-SKIPPED 'go-mojito-wishlist-upscale': No difference between the current and the new event trigger task rule
-SKIPPED 'go-notifier-upscale': No difference between the current and the new event trigger task rule
-.
-.
-.
-SKIPPED 'pgbouncer-merchant-downscale': No difference between the current and the new event trigger task rule
-SKIPPED 'go-feeds-downscale': No difference between the current and the new event trigger task rule
-SKIPPED 'go-orderapp-wscart-downscale': No difference between the current and the new event trigger task rule
+...
 
 List of event-trigger tasks in aliyun that are useless (no scaling rule attached to it) or not following our naming convention:
 INVALID 'go-testapp-upscale': Event trigger task in aliyun, you can choose to delete it at the end of this script
@@ -110,14 +94,8 @@ Caching all changed rules into cached_rules.yaml
 ## Debugging Log Example
 
 ```
-[03/09/2018 04:17:55 PM] Modified Scaling Rule go-goldmerchant-upscale:
-OLD => {'ScalingRuleAri': 'ari:acs:ess:ap-southeast-1:1208559439424161:scalingrule/asr-t4n3691dmt1t3xi5007b', 'ScalingGroupId': 'asg-t4nawf0lvwrygfltfnca', 'ScalingRuleId': 'asr-t4n3691dmt1t3xi5007b', 'AdjustmentValue': 65, 'ScalingRuleName': 'go-goldmerchant-upscale', 'Cooldown': 60, 'AdjustmentType': 'PercentChangeInCapacity'}
-
-NEW => {'Threshold': 60.0, 'TriggerAfter': 3, 'ComparisonOperator': '>=', 'Cooldown': 60, 'AdjustmentType': 'PercentChangeInCapacity', 'MetricItem': 'CpuUtilization', 'RefreshCycleSeconds': 60, 'Condition': 'Average', 'AdjustmentValue': 65}
-
 [06/09/2018 08:40:18 AM] Modified Scaling Group Size go-testapp:
 OLD => MinInstance: 0, MaxInstance: 1
-
 NEW => MinInstance: 0, MaxInstance: 3
 
 [03/09/2018 04:17:57 PM] Created Event-trigger Task go-goldmerchant-upscale: {'Threshold': 60.0, 'TriggerAfter': 3, 'ComparisonOperator': '>=', 'Cooldown': 60, 'AdjustmentType': 'PercentChangeInCapacity', 'MetricItem': 'CpuUtilization', 'RefreshCycleSeconds': 60, 'Condition': 'Average', 'AdjustmentValue': 65}
